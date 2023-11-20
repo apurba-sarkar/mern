@@ -17,9 +17,12 @@ const reg = async (req, res) => {
     const userExist = await User.findOne({ email: email });
 
     if (userExist) {
-      return res.status(400).json({ msg: "email already exist" });
+      return;
+      res.status(400).json({
+        msg: "email already exist",
+        token: await userCreated.generateToken(),
+      });
     }
-
 
     const userCreated = await User.create({
       username,
@@ -34,4 +37,33 @@ const reg = async (req, res) => {
   }
 };
 
-module.exports = { home, reg };
+// user-login
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const userExist = await User.findOne({ email });
+
+    if (!userExist) {
+      return res.status(400).json({ message: "Invalid Credientials" });
+    }
+
+    const user = await bcrypt.compare(password, userExist.password);
+
+    if (user) {
+      res.status(200).json({
+        message: "Login Succesful",
+        token: await userExist.generateToken(),
+        userID: userExist._id.toString(),
+      });
+    }
+    else{
+        res.status(401).json({message:"Invalid email or password"})
+    }
+  } catch (error) {
+    res.send(500).json("internel server error");
+  }
+};
+
+module.exports = { home, reg ,login};
